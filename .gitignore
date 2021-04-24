@@ -3,3 +3,6 @@
 data
 experiment
 test*
+*log*
+trained_model
+*.zip

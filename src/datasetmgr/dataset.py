@@ -19,12 +19,11 @@ from icecream import ic
 __all__ = ['ImageDataset']
 
 class ImageDataset(Dataset):
-    def __init__(self, dataset_dir, transforms=None, mode='train', train_test_ratio=0.7):
+    def __init__(self, dataset_dir, transforms=None, mode='train'):
         super(ImageDataset, self).__init__()
         self.dataset_dir = dataset_dir
         self.mode = mode
         self.transforms = transforms
-        self.train_test_ratio = train_test_ratio
         self.stego_path_list = []
         for _ in dataset_dir[:-1]:
             self.stego_path_list.extend(glob.glob(os.path.join(_,'*.png')))
@@ -33,13 +32,15 @@ class ImageDataset(Dataset):
         np.random.shuffle(self.cover_path_list)
         np.random.seed(args['seed'])
         np.random.shuffle(self.stego_path_list)
-        n = int(train_test_ratio * len(self.cover_path_list))
         if self.mode == 'train':
-            self.cover_path_list = self.cover_path_list[:n]
-            self.stego_path_list = self.stego_path_list[:n]
+            self.cover_path_list = self.cover_path_list[:4000]
+            self.stego_path_list = self.stego_path_list[:4000]
+        elif self.mode == 'val':
+            self.cover_path_list = self.cover_path_list[4000:5000]
+            self.stego_path_list = self.stego_path_list[4000:5000]
         else:
-            self.cover_path_list = self.cover_path_list[n:]
-            self.stego_path_list = self.stego_path_list[n:]
+            self.cover_path_list = self.cover_path_list[5000:]
+            self.stego_path_list = self.stego_path_list[5000:]
 
     def __getitem__(self, idx):
         cover_img = np.array(Image.open(self.cover_path_list[idx]))

@@ -9,6 +9,7 @@ FilePath: /steganography_platform_pl/src/models/zhunet.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 from src.utils import ABS, SPPLayer, HPF, TLU
 from icecream import ic
 import numpy as np
@@ -18,11 +19,14 @@ __all__ = ['ZhuNet']
 
 
 class ZhuNet(pl.LightningModule):
-    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4):
+    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, milestones=[40, 80, 120], gamma: float = 0.2, momentum: float = 0.9):
         super(ZhuNet, self).__init__()
         # 超参
         self.lr = lr
         self.weight_decay = weight_decay
+        self.milestones = milestones
+        self.gamma = gamma
+        self.momentum = momentum
         self.save_hyperparameters()
         self.accuracy = pl.metrics.Accuracy()
 
@@ -89,8 +93,10 @@ class ZhuNet(pl.LightningModule):
         return out9
     
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.lr)
-        return optimizer
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
+        # lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.milestones, gamma=self.gamma)
+        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=25, cooldown=5)
+        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler, 'monitor': 'val_loss'}
 
     def training_step(self, batch, batch_idx):
         # preprocess
@@ -100,12 +106,15 @@ class ZhuNet(pl.LightningModule):
         y = y.reshape(-1)
         # forward
         y_hat = self(x)
-        loss = F.cross_entropy(y_hat, y)
-        acc = self.accuracy(y_hat, y)
+        train_loss = F.cross_entropy(y_hat, y)
+        train_acc = self.accuracy(y_hat, y)
         # record
-        self.log('batch_loss', loss, prog_bar=True, on_step=True, on_epoch=True)
-        self.log('acc', acc, prog_bar=True, on_step=True, on_epoch=True)
-        return loss
+        lr = [group['lr'] for group in self.optimizers().param_groups]
+
+        self.log('train_loss', train_loss, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('train_acc', train_acc, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('lr', lr, prog_bar=True, on_step=False, on_epoch=True)
+        return train_loss
 
     def validation_step(self, batch, batch_idx):
         # preprocess
@@ -115,12 +124,13 @@ class ZhuNet(pl.LightningModule):
         y = y.reshape(-1)
         # forward
         y_hat = self(x)
-        loss = F.cross_entropy(y_hat, y)
-        acc = self.accuracy(y_hat, y)
+        val_loss = F.cross_entropy(y_hat, y)
+        val_acc = self.accuracy(y_hat, y)
         # record
-        self.log('batch_loss', loss, prog_bar=True, on_step=True, on_epoch=True)
-        self.log('acc', acc, prog_bar=True, on_step=True, on_epoch=True)
-        return loss
+        self.log('val_loss', val_loss, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('val_acc', val_acc, prog_bar=True, on_step=False, on_epoch=True)
+
+        return val_loss
     
     def test_step(self, batch, batch_idx):
         # preprocess
@@ -130,7 +140,7 @@ class ZhuNet(pl.LightningModule):
         y = y.reshape(-1)
         # forward
         y_hat = self(x)
-        acc = self.accuracy(y_hat, y)
+        test_acc = self.accuracy(y_hat, y)
         # record
-        self.log('acc', acc, prog_bar=True, on_step=True, on_epoch=True)
-        return acc
+        self.log('test_acc', test_acc, prog_bar=True, on_step=False, on_epoch=True)
+        return test_acc
