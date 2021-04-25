@@ -19,18 +19,18 @@ from icecream import ic
 __all__ = ['ImageDataset']
 
 class ImageDataset(Dataset):
-    def __init__(self, dataset_dir, transforms=None, mode='train'):
+    def __init__(self, data_dirs, transforms=None, mode='train', seed: int = 2021):
         super(ImageDataset, self).__init__()
-        self.dataset_dir = dataset_dir
+        self.data_dirs = data_dirs
         self.mode = mode
         self.transforms = transforms
         self.stego_path_list = []
-        for _ in dataset_dir[:-1]:
+        for _ in data_dirs[:-1]:
             self.stego_path_list.extend(glob.glob(os.path.join(_,'*.png')))
-        self.cover_path_list = glob.glob(os.path.join(dataset_dir[-1],'*.png'))
-        np.random.seed(args['seed'])
+        self.cover_path_list = glob.glob(os.path.join(data_dirs[-1],'*.png'))
+        np.random.seed(seed)
         np.random.shuffle(self.cover_path_list)
-        np.random.seed(args['seed'])
+        np.random.seed(seed)
         np.random.shuffle(self.stego_path_list)
         if self.mode == 'train':
             self.cover_path_list = self.cover_path_list[:4000]

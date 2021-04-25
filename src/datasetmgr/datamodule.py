@@ -38,17 +38,18 @@ eval_transform = T.Compose([
 ])
 
 class ImageDataModule(pl.LightningDataModule):
-    def __init__(self, data_dirs = ['data/bb_wow_0.4', 'data/cover'], batch_size: int = 32, train_transform=train_transform, eval_transform=eval_transform):
+    def __init__(self, data_dirs = ['data/bb_wow_0.4', 'data/cover'], batch_size: int = 32, train_transform=train_transform, eval_transform=eval_transform, seed: int = 2021):
         super(ImageDataModule, self).__init__()
         self.data_dirs = data_dirs
         self.batch_size = batch_size
         self.train_transform = train_transform
         self.eval_transform = eval_transform
+        self.seed = seed
 
     def setup(self, stage=None):
-        self.train_dataset = ImageDataset(dataset_dir=self.data_dirs, mode='train', transforms=self.train_transform)
-        self.val_dataset = ImageDataset(dataset_dir=self.data_dirs, mode='val', transforms=self.eval_transform)
-        self.test_dataset = ImageDataset(dataset_dir=self.data_dirs, mode='test', transforms=self.eval_transform)
+        self.train_dataset = ImageDataset(data_dirs=self.data_dirs, mode='train', transforms=self.train_transform, seed=self.seed)
+        self.val_dataset = ImageDataset(data_dirs=self.data_dirs, mode='val', transforms=self.eval_transform, seed=self.seed)
+        self.test_dataset = ImageDataset(data_dirs=self.data_dirs, mode='test', transforms=self.eval_transform, seed=self.seed)
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=16)

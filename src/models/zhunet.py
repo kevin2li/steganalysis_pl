@@ -19,14 +19,18 @@ __all__ = ['ZhuNet']
 
 
 class ZhuNet(pl.LightningModule):
-    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, milestones=[40, 80, 120], gamma: float = 0.2, momentum: float = 0.9):
+    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
         super(ZhuNet, self).__init__()
         # 超参
+        # for optimizer
         self.lr = lr
         self.weight_decay = weight_decay
-        self.milestones = milestones
-        self.gamma = gamma
         self.momentum = momentum
+        # for lr scheduler(ReduceLROnPlateau)
+        self.gamma = gamma
+        self.patience = patience
+        self.cooldown = cooldown
+
         self.save_hyperparameters()
         self.accuracy = pl.metrics.Accuracy()
 
@@ -95,7 +99,7 @@ class ZhuNet(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
         # lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.milestones, gamma=self.gamma)
-        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=25, cooldown=5)
+        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=self.gamma, patience=self.patience, cooldown=self.cooldown)
         return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler, 'monitor': 'val_loss'}
 
     def training_step(self, batch, batch_idx):
