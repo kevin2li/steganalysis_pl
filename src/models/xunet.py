@@ -5,7 +5,7 @@ from src.utils import ABS, TLU, HPF, SPPLayer
 
 __all__ = ['XuNet']
 
-#TODO not finished
+#TODO: not finished yet, do not use this
 class XuNet(nn.Module):
     def __init__(self):
         super(XuNet, self).__init__()

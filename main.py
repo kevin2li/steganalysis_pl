@@ -66,8 +66,9 @@ experiment_id = comet_logger.experiment.id
 # %%
 datamodule = ImageDataModule(**hparams)
 datamodule.setup()
-model = ZhuNet(**hparams)
-trainer = pl.Trainer(max_epochs=hparams['max_epochs'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
+# model = ZhuNet(**hparams)
+model = YedNet(**hparams)
+trainer = pl.Trainer(gpus=hparams['gpus'], max_epochs=hparams['max_epochs'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
 
 # %%
 # trainer.tune(model, datamodule=datamodule)
@@ -76,7 +77,7 @@ trainer.fit(model, datamodule=datamodule)
 # %%
 checkpoint_path = f"{hparams['save_dir']}/{hparams['project_name']}/{experiment_id}/checkpoints"
 trainer.logger.experiment.log_model('checkpoint', checkpoint_path)
-trainer.logger.experiment.log_asset('archive.zip')
+trainer.logger.experiment.log_asset('code.zip')
 # %%
 trainer.test(model, datamodule=datamodule)
 

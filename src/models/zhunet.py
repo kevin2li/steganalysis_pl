@@ -6,14 +6,15 @@ LastEditors: Please set LastEditors
 Description: In User Settings Edit
 FilePath: /steganography_platform_pl/src/models/zhunet.py
 '''
+import numpy as np
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from src.utils import ABS, SPPLayer, HPF, TLU
 from icecream import ic
-import numpy as np
-import pytorch_lightning as pl
+from src.utils import ABS, HPF, TLU, SPPLayer
+
 __all__ = ['ZhuNet']
 
 
@@ -31,6 +32,7 @@ class ZhuNet(pl.LightningModule):
         self.patience = patience
         self.cooldown = cooldown
 
+        # 其他
         self.save_hyperparameters()
         self.accuracy = pl.metrics.Accuracy()
 

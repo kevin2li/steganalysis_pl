@@ -1,15 +1,17 @@
 
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pytorch_lightning as pl
 import torch.optim as optim
-from src.utils import ABS, TLU, HPF, SPPLayer
+from src.utils import ABS, HPF, TLU, SPPLayer
 
 __all__ = ['YedNet']
 
+#TODO: not finished yet, do not use this
 class YedNet(pl.LightningModule):
     def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
+        super(YedNet, self).__init__()
         # 超参
         # for optimizer(SGD)
         self.lr = lr
@@ -19,9 +21,11 @@ class YedNet(pl.LightningModule):
         self.gamma = gamma
         self.patience = patience
         self.cooldown = cooldown
-
+        
+        # 其他
         self.save_hyperparameters()
         self.accuracy = pl.metrics.Accuracy()
+
         # 组网
         super(YedNet, self).__init__()
         self.hpf = HPF()

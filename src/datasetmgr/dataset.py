@@ -53,7 +53,7 @@ class ImageDataset(Dataset):
             # # only stego
             # self.images = self.stego_path_list
             # self.labels = np.ones(len(self.stego_path_list), dtype=np.int64)
-
+            
             np.random.seed(seed+999)
             np.random.shuffle(self.images)
             np.random.seed(seed+999)
