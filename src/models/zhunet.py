@@ -22,7 +22,7 @@ class ZhuNet(pl.LightningModule):
     def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
         super(ZhuNet, self).__init__()
         # 超参
-        # for optimizer
+        # for optimizer(SGD)
         self.lr = lr
         self.weight_decay = weight_decay
         self.momentum = momentum
@@ -118,7 +118,8 @@ class ZhuNet(pl.LightningModule):
         self.log('train_loss', train_loss, prog_bar=True, on_step=False, on_epoch=True)
         self.log('train_acc', train_acc, prog_bar=True, on_step=False, on_epoch=True)
         self.log('lr', lr, prog_bar=True, on_step=False, on_epoch=True)
-        return train_loss
+        # self.logger.experiment.add_image('example_images', x[0], 0)
+        return {'loss':train_loss, 'train_loss': train_loss, 'train_acc': train_acc}
 
     def validation_step(self, batch, batch_idx):
         # preprocess
@@ -134,17 +135,21 @@ class ZhuNet(pl.LightningModule):
         self.log('val_loss', val_loss, prog_bar=True, on_step=False, on_epoch=True)
         self.log('val_acc', val_acc, prog_bar=True, on_step=False, on_epoch=True)
 
-        return val_loss
+        return {'val_loss': val_loss, 'val_acc': val_acc}
     
     def test_step(self, batch, batch_idx):
         # preprocess
         x, y = batch
-        N, C, H, W = x.shape
-        x = x.reshape(N*C, 1, H, W)
-        y = y.reshape(-1)
+        x = x.unsqueeze(1)
+        # N, C, H, W = x.shape
+        # x = x.reshape(N*C, 1, H, W)
+        # y = y.reshape(-1)
         # forward
         y_hat = self(x)
+        test_loss = F.cross_entropy(y_hat, y)
         test_acc = self.accuracy(y_hat, y)
         # record
+        self.log('test_loss', test_loss, prog_bar=True, on_step=False, on_epoch=True)
         self.log('test_acc', test_acc, prog_bar=True, on_step=False, on_epoch=True)
-        return test_acc
+        
+        return {'test_loss': test_loss, 'test_acc': test_acc}

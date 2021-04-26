@@ -38,7 +38,7 @@ eval_transform = T.Compose([
 ])
 
 class ImageDataModule(pl.LightningDataModule):
-    def __init__(self, data_dirs = ['data/bb_wow_0.4', 'data/cover'], batch_size: int = 32, train_transform=train_transform, eval_transform=eval_transform, seed: int = 2021):
+    def __init__(self, data_dirs = ['data/bb_wow_0.4', 'data/cover'], batch_size: int = 32, train_transform=train_transform, eval_transform=eval_transform, seed: int = 2021, **kwargs):
         super(ImageDataModule, self).__init__()
         self.data_dirs = data_dirs
         self.batch_size = batch_size

@@ -1,5 +1,5 @@
 '''
-Author: your name
+Author: Kevin Li
 Date: 2021-04-23 20:52:45
 LastEditTime: 2021-04-23 21:44:23
 LastEditors: Please set LastEditors
@@ -15,7 +15,6 @@ import torch
 from icecream import ic
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
-from src.config import args
 from src.datasetmgr import ImageDataModule
 from src.models import ZhuNet, YedNet
 
@@ -46,25 +45,6 @@ hparams = {
 
 # %%
 # saves a file like: my/path/sample-mnist-epoch=02-val_loss=0.32.ckpt
-# checkpoint_callback = ModelCheckpoint(
-#     monitor='val_loss',
-#     filename='zhunet-{epoch:02d}-{val_loss:.2f}-{val_acc:.2f}',
-#     save_top_k=1,
-#     mode='min',
-#     save_last=True
-# )
-
-# comet_logger = CometLogger(
-#     api_key="6vfLO89GXYkYrGcritIRFfqmj",
-#     save_dir=hparams['save_dir'],
-#     project_name="zhunet_project",
-#     workspace="kevin2li",
-#     experiment_name='zhunet_v2',  # Optional
-#     # experiment_key='8d3dd674da27452cb5e4aa17f5379869'
-# )
-
-# %%
-# saves a file like: my/path/sample-mnist-epoch=02-val_loss=0.32.ckpt
 checkpoint_callback = ModelCheckpoint(
     monitor='val_loss',
     filename='{epoch:02d}-{val_loss:.2f}-{val_acc:.2f}',
@@ -87,7 +67,7 @@ experiment_id = comet_logger.experiment.id
 datamodule = ImageDataModule(**hparams)
 datamodule.setup()
 model = ZhuNet(**hparams)
-trainer = pl.Trainer(gpus=hparams['gpus'], max_epochs=hparams['max_epochs'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
+trainer = pl.Trainer(max_epochs=hparams['max_epochs'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
 
 # %%
 # trainer.tune(model, datamodule=datamodule)
@@ -101,5 +81,23 @@ trainer.logger.experiment.log_asset('archive.zip')
 trainer.test(model, datamodule=datamodule)
 
 # %%
-trainer.test(ckpt_path='comet_log/zhunet_project/8d3dd674da27452cb5e4aa17f5379869/checkpoints/zhunet-epoch=210-val_loss=0.44-val_acc=0.85.ckpt', datamodule=datamodule)
+model = model.load_from_checkpoint('comet_log/zhunet_project/8d3dd674da27452cb5e4aa17f5379869/checkpoints/zhunet-epoch=210-val_loss=0.44-val_acc=0.85.ckpt')
+# %%
+trainer.test(model, datamodule=datamodule)
+# %%
+test_dataloader = datamodule.test_dataloader()
+# %%
+len(test_dataloader)
+# %%
+x, y = iter(test_dataloader).next()
+x.shape
+# %%
+y
+# %%
+model(x)
+# %%
+import matplotlib.pyplot as plt
+plt.imshow(x[7], cmap='gray')
+# %%
+y
 # %%

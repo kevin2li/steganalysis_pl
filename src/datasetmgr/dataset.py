@@ -42,17 +42,42 @@ class ImageDataset(Dataset):
             self.cover_path_list = self.cover_path_list[5000:]
             self.stego_path_list = self.stego_path_list[5000:]
 
+            # both cover and stego
+            self.images = self.cover_path_list +  self.stego_path_list
+            self.labels = np.concatenate([np.zeros(len(self.cover_path_list), dtype=np.int64), np.ones(len(self.stego_path_list), dtype=np.int64)])
+            
+            # only cover
+            # self.images = self.cover_path_list
+            # self.labels = np.zeros(len(self.cover_path_list), dtype=np.int64)
+
+            # # only stego
+            # self.images = self.stego_path_list
+            # self.labels = np.ones(len(self.stego_path_list), dtype=np.int64)
+
+            np.random.seed(seed+999)
+            np.random.shuffle(self.images)
+            np.random.seed(seed+999)
+            np.random.shuffle(self.labels)
+
     def __getitem__(self, idx):
-        cover_img = np.array(Image.open(self.cover_path_list[idx]))
-        stego_img = np.array(Image.open(self.stego_path_list[idx]))
-        data = np.stack([cover_img, stego_img])
-        
-        if self.transforms:
-            data = self.transforms(data)
+        if self.mode in ('train', 'val'):
+            cover_img = np.array(Image.open(self.cover_path_list[idx]))
+            stego_img = np.array(Image.open(self.stego_path_list[idx]))
+            data = np.stack([cover_img, stego_img])
+            
+            if self.transforms:
+                data = self.transforms(data)
 
-        label = torch.tensor([0, 1], dtype=torch.int64)
-
+            label = torch.tensor([0, 1], dtype=torch.int64)
+        else:
+            data = np.array(Image.open(self.images[idx]))
+            if self.transforms:
+                data = self.transforms(data)
+            label = torch.tensor(self.labels[idx])
         return data, label
 
     def __len__(self):
-        return len(self.cover_path_list)
+        if self.mode in ('train', 'val'):
+            return len(self.cover_path_list)
+        else:
+            return len(self.images)
