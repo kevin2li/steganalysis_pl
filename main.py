@@ -42,7 +42,7 @@ hparams = {
     'experiment_name': 'yednet_v0',
     'experiment_key': None
 }
-
+pl.seed_everything(hparams['seed'])
 # %%
 # saves a file like: my/path/sample-mnist-epoch=02-val_loss=0.32.ckpt
 checkpoint_callback = ModelCheckpoint(
@@ -63,6 +63,7 @@ comet_logger = CometLogger(
 )
 
 experiment_id = comet_logger.experiment.id
+comet_logger.experiment.log_parameters(hparams)
 # %%
 datamodule = ImageDataModule(**hparams)
 datamodule.setup()

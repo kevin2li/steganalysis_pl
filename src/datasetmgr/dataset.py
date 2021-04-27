@@ -1,11 +1,3 @@
-'''
-Author: your name
-Date: 2021-04-23 21:36:59
-LastEditTime: 2021-04-23 21:36:58
-LastEditors: your name
-Description: In User Settings Edit
-FilePath: /steganography_platform_pl/src/datasetmgr/dataset.py
-'''
 import glob
 import os
 
@@ -13,8 +5,6 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
-from src.config import args
-from icecream import ic
 
 __all__ = ['ImageDataset']
 
@@ -42,42 +32,17 @@ class ImageDataset(Dataset):
             self.cover_path_list = self.cover_path_list[5000:]
             self.stego_path_list = self.stego_path_list[5000:]
 
-            # both cover and stego
-            self.images = self.cover_path_list +  self.stego_path_list
-            self.labels = np.concatenate([np.zeros(len(self.cover_path_list), dtype=np.int64), np.ones(len(self.stego_path_list), dtype=np.int64)])
-            
-            # only cover
-            # self.images = self.cover_path_list
-            # self.labels = np.zeros(len(self.cover_path_list), dtype=np.int64)
-
-            # # only stego
-            # self.images = self.stego_path_list
-            # self.labels = np.ones(len(self.stego_path_list), dtype=np.int64)
-            
-            np.random.seed(seed+999)
-            np.random.shuffle(self.images)
-            np.random.seed(seed+999)
-            np.random.shuffle(self.labels)
-
     def __getitem__(self, idx):
-        if self.mode in ('train', 'val'):
-            cover_img = np.array(Image.open(self.cover_path_list[idx]))
-            stego_img = np.array(Image.open(self.stego_path_list[idx]))
-            data = np.stack([cover_img, stego_img])
-            
-            if self.transforms:
-                data = self.transforms(data)
+        cover_img = np.array(Image.open(self.cover_path_list[idx]))
+        stego_img = np.array(Image.open(self.stego_path_list[idx]))
+        data = np.stack([cover_img, stego_img])
+        
+        if self.transforms:
+            data = self.transforms(data)
 
-            label = torch.tensor([0, 1], dtype=torch.int64)
-        else:
-            data = np.array(Image.open(self.images[idx]))
-            if self.transforms:
-                data = self.transforms(data)
-            label = torch.tensor(self.labels[idx])
+        label = torch.tensor([0, 1], dtype=torch.int64)
+
         return data, label
 
     def __len__(self):
-        if self.mode in ('train', 'val'):
-            return len(self.cover_path_list)
-        else:
-            return len(self.images)
+        return len(self.cover_path_list)

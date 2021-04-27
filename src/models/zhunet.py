@@ -1,11 +1,3 @@
-'''
-Author: your name
-Date: 2021-04-23 20:38:55
-LastEditTime: 2021-04-23 21:15:21
-LastEditors: Please set LastEditors
-Description: In User Settings Edit
-FilePath: /steganography_platform_pl/src/models/zhunet.py
-'''
 import numpy as np
 import pytorch_lightning as pl
 import torch
@@ -16,7 +8,6 @@ from icecream import ic
 from src.utils import ABS, HPF, TLU, SPPLayer
 
 __all__ = ['ZhuNet']
-
 
 
 class ZhuNet(pl.LightningModule):

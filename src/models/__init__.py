@@ -2,14 +2,17 @@ import pytorch_lightning as pl
 import torch
 import torch.optim as optim
 import torchmetrics
-from src.utils import initialization, partition_parameters
 from icecream import ic
-from . import yednet, zhunet, xunet
-from .yednet import *
-from .zhunet import *
-from .xunet import *
+from src.utils import initialization, partition_parameters
 
-__all__ = ['ZhuNet', 'YedNet', 'XuNet']
+from . import srnet, xunet, yednet, yenet, zhunet
+from .srnet import *
+from .xunet import *
+from .yednet import *
+from .yenet import *
+from .zhunet import *
+
+__all__ = ['ZhuNet', 'YedNet', 'XuNet', 'YeNet', 'SRNet']
 
 # class ZhuNet(ZhuNet, pl.LightningModule):
 #     def __init__(self, loss_fn):

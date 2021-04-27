@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from src.utils import ABS, HPF, TLU, SPPLayer
+from torchmetrics import Accuracy
 
 __all__ = ['YedNet']
 
