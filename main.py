@@ -16,7 +16,7 @@ from icecream import ic
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
 from src.datasetmgr import ImageDataModule
-from src.models import ZhuNet, YedNet
+from src.models import ZhuNet, YedNet, YeNet, SRNet, XuNet
 
 hparams = {
     # path
@@ -67,39 +67,35 @@ comet_logger.experiment.log_parameters(hparams)
 # %%
 datamodule = ImageDataModule(**hparams)
 datamodule.setup()
+
 # model = ZhuNet(**hparams)
 model = YedNet(**hparams)
+# model = XuNet(**hparams)
+# model = YeNet(**hparams)
+# model = SRNet(**hparams)
+
 trainer = pl.Trainer(gpus=hparams['gpus'], max_epochs=hparams['max_epochs'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
 
 # %%
 # trainer.tune(model, datamodule=datamodule)
 # %%
 trainer.fit(model, datamodule=datamodule)
+
 # %%
-checkpoint_path = f"{hparams['save_dir']}/{hparams['project_name']}/{experiment_id}/checkpoints"
-trainer.logger.experiment.log_model('checkpoint', checkpoint_path)
+# resume training
+checkpoint_path = f"{hparams['save_dir']}/{hparams['project_name']}/{experiment_id}/checkpoints/last.ckpt"
+trainer = pl.Trainer(resume_from_checkpoint=checkpoint_path, gpus=hparams['gpus'], max_epochs=hparams['max_epochs']+80, progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback])
+trainer.fit(model, datamodule=datamodule)
+# %%
+checkpoint_dir = f"{hparams['save_dir']}/{hparams['project_name']}/{experiment_id}/checkpoints"
+trainer.logger.experiment.log_model('checkpoint', checkpoint_dir)
 trainer.logger.experiment.log_asset('code.zip')
 # %%
 trainer.test(model, datamodule=datamodule)
 
 # %%
-model = model.load_from_checkpoint('comet_log/zhunet_project/8d3dd674da27452cb5e4aa17f5379869/checkpoints/zhunet-epoch=210-val_loss=0.44-val_acc=0.85.ckpt')
-# %%
+# model = model.load_from_checkpoint('comet_log/yednet_project/d99bc82909864fe0bd038918147b9a0c/checkpoints/epoch=247-val_loss=0.47-val_acc=0.83.ckpt')
+model = model.load_from_checkpoint('comet_log/yednet_project/d99bc82909864fe0bd038918147b9a0c/checkpoints/epoch=00-val_loss=0.44-val_acc=0.88.ckpt')
 trainer.test(model, datamodule=datamodule)
-# %%
-test_dataloader = datamodule.test_dataloader()
-# %%
-len(test_dataloader)
-# %%
-x, y = iter(test_dataloader).next()
-x.shape
-# %%
-y
-# %%
-model(x)
-# %%
-import matplotlib.pyplot as plt
-plt.imshow(x[7], cmap='gray')
-# %%
-y
+
 # %%

@@ -9,7 +9,6 @@ from torchmetrics import Accuracy
 
 __all__ = ['YedNet']
 
-#TODO: not finished yet, do not use this
 class YedNet(pl.LightningModule):
     def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
         super(YedNet, self).__init__()
@@ -28,7 +27,6 @@ class YedNet(pl.LightningModule):
         self.accuracy = pl.metrics.Accuracy()
 
         # 组网
-        super(YedNet, self).__init__()
         self.hpf = HPF()
         self.group1 = nn.Sequential(
             nn.Conv2d(30, 30, 5, 1, 2),
@@ -65,7 +63,8 @@ class YedNet(pl.LightningModule):
             nn.ReLU(),
             nn.Linear(256, 1024),
             nn.ReLU(),
-            nn.Linear(1024, 2)
+            nn.Linear(1024, 2),
+            nn.Softmax(dim=1)
         )
 
     def forward(self, x):

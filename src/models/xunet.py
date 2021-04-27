@@ -74,6 +74,7 @@ class XuNet(pl.LightningModule):
 
         out = out.view(out.size(0), -1)
         out = self.fc(out)
+        out = F.softmax(out, dim=1)
         return out
 
     def configure_optimizers(self):
@@ -120,10 +121,9 @@ class XuNet(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         # preprocess
         x, y = batch
-        x = x.unsqueeze(1)
-        # N, C, H, W = x.shape
-        # x = x.reshape(N*C, 1, H, W)
-        # y = y.reshape(-1)
+        N, C, H, W = x.shape
+        x = x.reshape(N*C, 1, H, W)
+        y = y.reshape(-1)
         # forward
         y_hat = self(x)
         test_loss = F.cross_entropy(y_hat, y)

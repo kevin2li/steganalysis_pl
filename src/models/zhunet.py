@@ -133,10 +133,9 @@ class ZhuNet(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         # preprocess
         x, y = batch
-        x = x.unsqueeze(1)
-        # N, C, H, W = x.shape
-        # x = x.reshape(N*C, 1, H, W)
-        # y = y.reshape(-1)
+        N, C, H, W = x.shape
+        x = x.reshape(N*C, 1, H, W)
+        y = y.reshape(-1)
         # forward
         y_hat = self(x)
         test_loss = F.cross_entropy(y_hat, y)

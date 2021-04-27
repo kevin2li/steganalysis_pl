@@ -206,8 +206,8 @@ class SRNet(pl.LightningModule):
         avgp = torch.mean(bn, dim=(2, 3), keepdim=True)
         flatten = avgp.view(avgp.size(0), -1)
         fc = self.fc(flatten)
-        # out = F.log_softmax(fc, dim=1)
-        return fc
+        out = F.log_softmax(fc, dim=1)
+        return out
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
@@ -253,10 +253,9 @@ class SRNet(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         # preprocess
         x, y = batch
-        x = x.unsqueeze(1)
-        # N, C, H, W = x.shape
-        # x = x.reshape(N*C, 1, H, W)
-        # y = y.reshape(-1)
+        N, C, H, W = x.shape
+        x = x.reshape(N*C, 1, H, W)
+        y = y.reshape(-1)
         # forward
         y_hat = self(x)
         test_loss = F.cross_entropy(y_hat, y)
