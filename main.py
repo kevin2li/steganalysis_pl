@@ -20,26 +20,26 @@ from src.models import ZhuNet, YedNet, YeNet, SRNet, XuNet
 
 hparams = {
     # path
-    'data_dirs': ['data/bb_wow_0.4', 'data/cover'],
+    'data_dirs': ['data/bb_suniward_0.4', 'data/cover'],
     # optimizer(SGD)
     'lr': 0.005,
     'weight_decay': 5e-4,
     'momentum': 0.9,
     # lr scheduler(ReduceLROnPlateau)
     'gamma': 0.2,
-    'patience': 20,
+    'patience': 25,
     'cooldown': 5,
     # other
     'gpus': '0',
     'seed': 2021,
     'batch_size': 32,
-    'max_epochs': 250,
+    'max_epochs': 320,
     # comet.ml experiment description
     'api_key': '6vfLO89GXYkYrGcritIRFfqmj',
     'save_dir': 'comet_log',
     'workspace': 'kevin2li',
-    'project_name': 'yednet_project',
-    'experiment_name': 'yednet_v0',
+    'project_name': 'zhunet_project',
+    'experiment_name': 'zhunet_suniward',
     'experiment_key': None
 }
 pl.seed_everything(hparams['seed'])
@@ -68,8 +68,8 @@ comet_logger.experiment.log_parameters(hparams)
 datamodule = ImageDataModule(**hparams)
 datamodule.setup()
 
-# model = ZhuNet(**hparams)
-model = YedNet(**hparams)
+model = ZhuNet(**hparams)
+# model = YedNet(**hparams)
 # model = XuNet(**hparams)
 # model = YeNet(**hparams)
 # model = SRNet(**hparams)
@@ -83,9 +83,9 @@ trainer.fit(model, datamodule=datamodule)
 
 # %%
 # resume training
-checkpoint_path = f"{hparams['save_dir']}/{hparams['project_name']}/{experiment_id}/checkpoints/last.ckpt"
-trainer = pl.Trainer(resume_from_checkpoint=checkpoint_path, gpus=hparams['gpus'], max_epochs=hparams['max_epochs']+80, progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback])
-trainer.fit(model, datamodule=datamodule)
+# checkpoint_path = f"{hparams['save_dir']}/{hparams['project_name']}/{experiment_id}/checkpoints/last.ckpt"
+# trainer = pl.Trainer(resume_from_checkpoint=checkpoint_path, gpus=hparams['gpus'], max_epochs=hparams['max_epochs']+80, progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback])
+# trainer.fit(model, datamodule=datamodule)
 # %%
 checkpoint_dir = f"{hparams['save_dir']}/{hparams['project_name']}/{experiment_id}/checkpoints"
 trainer.logger.experiment.log_model('checkpoint', checkpoint_dir)
@@ -95,7 +95,7 @@ trainer.test(model, datamodule=datamodule)
 
 # %%
 # model = model.load_from_checkpoint('comet_log/yednet_project/d99bc82909864fe0bd038918147b9a0c/checkpoints/epoch=247-val_loss=0.47-val_acc=0.83.ckpt')
-model = model.load_from_checkpoint('comet_log/yednet_project/d99bc82909864fe0bd038918147b9a0c/checkpoints/epoch=00-val_loss=0.44-val_acc=0.88.ckpt')
+model = model.load_from_checkpoint('comet_log/yednet_project/2c690662c549495d87bbfdba1ef7dfab/checkpoints/epoch=247-val_loss=0.48-val_acc=0.81.ckpt')
 trainer.test(model, datamodule=datamodule)
 
 # %%
