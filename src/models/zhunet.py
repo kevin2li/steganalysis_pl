@@ -11,7 +11,7 @@ __all__ = ['ZhuNet']
 
 
 class ZhuNet(pl.LightningModule):
-    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
+    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, step_size: int = 40, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
         super(ZhuNet, self).__init__()
         # 超参
         # for optimizer(SGD)
@@ -22,6 +22,8 @@ class ZhuNet(pl.LightningModule):
         self.gamma = gamma
         self.patience = patience
         self.cooldown = cooldown
+        
+        self.step_size = step_size # (for StepLR)
 
         # 其他
         self.save_hyperparameters()
@@ -92,7 +94,8 @@ class ZhuNet(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
         # lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.milestones, gamma=self.gamma)
-        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=self.gamma, patience=self.patience, cooldown=self.cooldown)
+        # lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=self.gamma, patience=self.patience, cooldown=self.cooldown)
+        lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=self.step_size, gamma=self.gamma)
         return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler, 'monitor': 'val_loss'}
 
     def training_step(self, batch, batch_idx):

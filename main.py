@@ -20,7 +20,7 @@ from src.models import ZhuNet, YedNet, YeNet, SRNet, XuNet
 
 hparams = {
     # path
-    'data_dirs': ['data/bb_suniward_0.4', 'data/cover'],
+    'data_dirs': ['/home/likai/DataSets/SUI_stego(0.4)', '/home/likai/DataSets/COVER'],
     # optimizer(SGD)
     'lr': 0.005,
     'weight_decay': 5e-4,
@@ -29,11 +29,12 @@ hparams = {
     'gamma': 0.2,
     'patience': 25,
     'cooldown': 5,
+    'step_size': 40,
     # other
     'gpus': '0',
     'seed': 2021,
     'batch_size': 32,
-    'max_epochs': 320,
+    'max_epochs': 300,
     # comet.ml experiment description
     'api_key': '6vfLO89GXYkYrGcritIRFfqmj',
     'save_dir': 'comet_log',
@@ -95,7 +96,7 @@ trainer.test(model, datamodule=datamodule)
 
 # %%
 # model = model.load_from_checkpoint('comet_log/yednet_project/d99bc82909864fe0bd038918147b9a0c/checkpoints/epoch=247-val_loss=0.47-val_acc=0.83.ckpt')
-model = model.load_from_checkpoint('comet_log/yednet_project/2c690662c549495d87bbfdba1ef7dfab/checkpoints/epoch=247-val_loss=0.48-val_acc=0.81.ckpt')
+model = model.load_from_checkpoint('/home/likai/steganalysis_pl/comet_log/zhunet_project/7bb9e7b5e16747df86876ce91234de5a/checkpoints/epoch=313-val_loss=0.54-val_acc=0.74.ckpt')
 trainer.test(model, datamodule=datamodule)
 
 # %%
