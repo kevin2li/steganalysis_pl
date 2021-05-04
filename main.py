@@ -20,7 +20,17 @@ from src.models import ZhuNet, YedNet, YeNet, SRNet, XuNet
 
 hparams = {
     # path
-    'data_dirs': ['/home/likai/DataSets/SUI_stego(0.4)', '/home/likai/DataSets/COVER'],
+    'data_dirs': [
+        # '/home/likai/DataSets/SUI_stego(0.4)',
+        # '/home/likai/DataSets/WOWstego(0.4)',
+        '/home/likai/DataSets/MiPODstego(0.4)',
+        # '/home/likai/DataSets/HUGOstego(0.4)',
+        # '/home/likai/DataSets/HILLstego(0.4)',
+        # '/home/likai/DataSets/MGstego(0.4)',
+        # '/home/likai/DataSets/MVGstego(0.4)',
+        # '/home/likai/DataSets/UTGANstego(0.4)',
+        '/home/likai/DataSets/COVER'
+    ],
     # optimizer(SGD)
     'lr': 0.005,
     'weight_decay': 5e-4,
