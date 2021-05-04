@@ -29,12 +29,12 @@ hparams = {
     'gamma': 0.2,
     'patience': 25,
     'cooldown': 5,
-    'step_size': 40,
+    'step_size': 50,
     # other
     'gpus': '0',
     'seed': 2021,
     'batch_size': 32,
-    'max_epochs': 300,
+    'max_epochs': 320,
     # comet.ml experiment description
     'api_key': '6vfLO89GXYkYrGcritIRFfqmj',
     'save_dir': 'comet_log',
@@ -96,7 +96,7 @@ trainer.test(model, datamodule=datamodule)
 
 # %%
 # model = model.load_from_checkpoint('comet_log/yednet_project/d99bc82909864fe0bd038918147b9a0c/checkpoints/epoch=247-val_loss=0.47-val_acc=0.83.ckpt')
-model = model.load_from_checkpoint('/home/likai/steganalysis_pl/comet_log/zhunet_project/7bb9e7b5e16747df86876ce91234de5a/checkpoints/epoch=313-val_loss=0.54-val_acc=0.74.ckpt')
+model = model.load_from_checkpoint('/home/likai/steganalysis_pl/comet_log/zhunet_project/215eafa27d884f34b6c4b2c58a1c115a/checkpoints/epoch=235-val_loss=0.52-val_acc=0.76.ckpt')
 trainer.test(model, datamodule=datamodule)
 
 # %%
