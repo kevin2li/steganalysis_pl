@@ -29,7 +29,7 @@ all_stego_dirs = [
     '/home/likai/DataSets/UTGANstego(0.4)',
 ]
 
-for dir in all_stego_dirs[2:]:
+for dir in all_stego_dirs:
     data_dirs = []
     data_dirs.append(dir)
     data_dirs.append('/home/likai/DataSets/COVER')
@@ -50,13 +50,13 @@ for dir in all_stego_dirs[2:]:
         'gpus': '0',
         'seed': 2021,
         'batch_size': 32,
-        'max_epochs': 320,
+        'max_epochs': 280,
         # comet.ml experiment description
         'api_key': '6vfLO89GXYkYrGcritIRFfqmj',
         'save_dir': 'comet_log',
         'workspace': 'kevin2li',
-        'project_name': 'zhunet_project',
-        'experiment_name': f'zhunet_{dir}',
+        'project_name': 'yednet_project',
+        'experiment_name': f'yednet_{dir[21:]}',
         'experiment_key': None
     }
     pl.seed_everything(hparams['seed'])
@@ -85,8 +85,8 @@ for dir in all_stego_dirs[2:]:
     datamodule = ImageDataModule(**hparams)
     datamodule.setup()
 
-    model = ZhuNet(**hparams)
-    # model = YedNet(**hparams)
+    # model = ZhuNet(**hparams)
+    model = YedNet(**hparams)
     # model = XuNet(**hparams)
     # model = YeNet(**hparams)
     # model = SRNet(**hparams)
