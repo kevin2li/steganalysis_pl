@@ -92,7 +92,13 @@ class ZhuNet(pl.LightningModule):
         return out9
     
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
+        params_wd, params_rest = [], []
+        for m in self.parameters():
+            if m.requires_grad:
+                (params_wd if m.dim()!=1 else params_rest).append(m)
+        param_groups = [{'params': params_wd, 'weight_decay': self.weight_decay},
+                        {'params': params_rest}]
+        optimizer = torch.optim.SGD(param_groups, lr=self.lr, momentum=self.momentum)
         # lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.milestones, gamma=self.gamma)
         # lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=self.gamma, patience=self.patience, cooldown=self.cooldown)
         lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=self.step_size, gamma=self.gamma)
