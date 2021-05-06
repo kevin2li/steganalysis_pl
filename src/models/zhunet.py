@@ -71,7 +71,7 @@ class ZhuNet(pl.LightningModule):
             nn.Linear(128*21, 1024),
             nn.ReLU(),
             nn.Linear(1024, 2),
-            nn.Softmax(dim=1)
+            # nn.Softmax(dim=1)
         )
 
     def forward(self, x):
@@ -113,6 +113,7 @@ class ZhuNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         train_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         train_acc = self.accuracy(y_hat, y)
         # record
         lr = [group['lr'] for group in self.optimizers().param_groups]
@@ -132,6 +133,7 @@ class ZhuNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         val_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         val_acc = self.accuracy(y_hat, y)
         # record
         self.log('val_loss', val_loss, prog_bar=True, on_step=False, on_epoch=True)
@@ -148,6 +150,7 @@ class ZhuNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         test_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         test_acc = self.accuracy(y_hat, y)
         # record
         self.log('test_loss', test_loss, prog_bar=True, on_step=False, on_epoch=True)

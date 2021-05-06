@@ -8,6 +8,9 @@ FilePath: /steganography_platform_pl/main.py
 '''
 # %%
 import os
+from glob import glob
+from pathlib import Path
+
 import comet_ml
 import numpy as np
 import pytorch_lightning as pl
@@ -15,12 +18,14 @@ import torch
 from icecream import ic
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
+
 from src.datasetmgr import ImageDataModule
-from src.models import ZhuNet, YedNet, YeNet, SRNet, XuNet
+from src.models import SRNet, XuNet, YedNet, YeNet, ZhuNet
+from src.utils import initialization
 
 all_stego_dirs = [
-    '/home/likai/DataSets/SUI_stego(0.4)',
     '/home/likai/DataSets/WOWstego(0.4)',
+    '/home/likai/DataSets/SUI_stego(0.4)',
     '/home/likai/DataSets/MiPODstego(0.4)',
     '/home/likai/DataSets/HUGOstego(0.4)',
     '/home/likai/DataSets/HILLstego(0.4)',
@@ -38,7 +43,7 @@ for dir in all_stego_dirs:
         # path
         'data_dirs': data_dirs,
         # optimizer(SGD)
-        'lr': 0.005,
+        'lr': 0.005,    # yenet:0.001 others:0.005
         'weight_decay': 5e-4,
         'momentum': 0.9,
         # lr scheduler(ReduceLROnPlateau)
@@ -51,12 +56,13 @@ for dir in all_stego_dirs:
         'seed': 2021,
         'batch_size': 32,
         'max_epochs': 280,
+        'gradient_clip_val': 1.0,
         # comet.ml experiment description
         'api_key': '6vfLO89GXYkYrGcritIRFfqmj',
         'save_dir': 'comet_log',
         'workspace': 'kevin2li',
-        'project_name': 'yednet_project',
-        'experiment_name': f'yednet_{dir[21:]}',
+        'project_name': 'zhunet_project',
+        'experiment_name': f'zhunet_{dir[21:]}',
         'experiment_key': None
     }
     pl.seed_everything(hparams['seed'])
@@ -85,13 +91,14 @@ for dir in all_stego_dirs:
     datamodule = ImageDataModule(**hparams)
     datamodule.setup()
 
-    # model = ZhuNet(**hparams)
-    model = YedNet(**hparams)
+    model = ZhuNet(**hparams)
+    # model = YedNet(**hparams)
     # model = XuNet(**hparams)
     # model = YeNet(**hparams)
     # model = SRNet(**hparams)
 
-    trainer = pl.Trainer(gpus=hparams['gpus'], max_epochs=hparams['max_epochs'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
+    initialization(model)
+    trainer = pl.Trainer(gpus=hparams['gpus'], max_epochs=hparams['max_epochs'], gradient_clip_val=hparams['gradient_clip_val'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
 
     # %%
     # trainer.tune(model, datamodule=datamodule)
@@ -108,11 +115,8 @@ for dir in all_stego_dirs:
     trainer.logger.experiment.log_model('checkpoint', checkpoint_dir)
     trainer.logger.experiment.log_asset('code.zip')
     # %%
-    trainer.test(model, datamodule=datamodule)
-
-    # %%
-    # model = model.load_from_checkpoint('comet_log/yednet_project/d99bc82909864fe0bd038918147b9a0c/checkpoints/epoch=247-val_loss=0.47-val_acc=0.83.ckpt')
-    # model = model.load_from_checkpoint('/home/likai/steganalysis_pl/comet_log/zhunet_project/215eafa27d884f34b6c4b2c58a1c115a/checkpoints/epoch=235-val_loss=0.52-val_acc=0.76.ckpt')
-    # trainer.test(model, datamodule=datamodule)
-
+    checkpoint_list = glob(str(Path(checkpoint_dir) / '*'))
+    for checkpoint in checkpoint_list:
+        model = model.load_from_checkpoint(checkpoint)
+        trainer.test(model, datamodule=datamodule)
     # %%

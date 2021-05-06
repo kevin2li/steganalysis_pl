@@ -205,8 +205,8 @@ class SRNet(pl.LightningModule):
         bn = self.bn122(conv2)
         avgp = torch.mean(bn, dim=(2, 3), keepdim=True)
         flatten = avgp.view(avgp.size(0), -1)
-        fc = self.fc(flatten)
-        out = F.log_softmax(fc, dim=1)
+        out = self.fc(flatten)
+        # out = F.log_softmax(out, dim=1)
         return out
 
     def configure_optimizers(self):
@@ -224,6 +224,7 @@ class SRNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         train_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         train_acc = self.accuracy(y_hat, y)
         # record
         lr = [group['lr'] for group in self.optimizers().param_groups]
@@ -243,6 +244,7 @@ class SRNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         val_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         val_acc = self.accuracy(y_hat, y)
         # record
         self.log('val_loss', val_loss, prog_bar=True, on_step=False, on_epoch=True)
@@ -259,6 +261,7 @@ class SRNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         test_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         test_acc = self.accuracy(y_hat, y)
         # record
         self.log('test_loss', test_loss, prog_bar=True, on_step=False, on_epoch=True)

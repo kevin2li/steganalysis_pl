@@ -19,18 +19,16 @@ srm_filters = torch.from_numpy(srm_filters).to(device=device, dtype=torch.float)
 srm_filters = torch.autograd.Variable(srm_filters, requires_grad=False)
 
 class YeNet(pl.LightningModule):
-    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
+    def __init__(self, lr: float=0.001, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, step_size: int = 50, **kwargs):
         super(YeNet, self).__init__()
         # 超参
         # for optimizer(SGD)
         self.lr = lr
         self.weight_decay = weight_decay
         self.momentum = momentum
-        # for lr scheduler(ReduceLROnPlateau)
+        # for lr scheduler(StepLR)
         self.gamma = gamma
-        self.patience = patience
-        self.cooldown = cooldown
-
+        self.step_size = step_size
         # 其他
         self.save_hyperparameters()
         self.accuracy = pl.metrics.Accuracy()
@@ -63,14 +61,19 @@ class YeNet(pl.LightningModule):
         out = F.relu(self.conv9(out))
         out = out.view(out.size(0), -1)
         out = self.fc(out)
-        out = F.softmax(out, dim=1)
+        # out = F.softmax(out, dim=1)
         return out
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
-        # lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.milestones, gamma=self.gamma)
-        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=self.gamma, patience=self.patience, cooldown=self.cooldown)
-        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler, 'monitor': 'val_loss'}
+        params_wd, params_rest = [], []
+        for m in self.parameters():
+            if m.requires_grad:
+                (params_wd if m.dim()!=1 else params_rest).append(m)
+        param_groups = [{'params': params_wd, 'weight_decay': self.weight_decay},
+                        {'params': params_rest}]
+        optimizer = torch.optim.Adadelta(param_groups, lr=self.lr, weight_decay=self.weight_decay)
+        lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=self.step_size, gamma=self.gamma)
+        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
 
     def training_step(self, batch, batch_idx):
         # preprocess
@@ -81,6 +84,7 @@ class YeNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         train_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         train_acc = self.accuracy(y_hat, y)
         # record
         lr = [group['lr'] for group in self.optimizers().param_groups]
@@ -100,6 +104,7 @@ class YeNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         val_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         val_acc = self.accuracy(y_hat, y)
         # record
         self.log('val_loss', val_loss, prog_bar=True, on_step=False, on_epoch=True)
@@ -116,6 +121,7 @@ class YeNet(pl.LightningModule):
         # forward
         y_hat = self(x)
         test_loss = F.cross_entropy(y_hat, y)
+        y_hat = F.softmax(y_hat, dim=1)
         test_acc = self.accuracy(y_hat, y)
         # record
         self.log('test_loss', test_loss, prog_bar=True, on_step=False, on_epoch=True)
