@@ -10,22 +10,19 @@ from torchmetrics import Accuracy
 __all__ = ['YedNet']
 
 class YedNet(pl.LightningModule):
-    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, step_size: int = 50, **kwargs):
+    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, step_size: int = 50, **kwargs):
         super(YedNet, self).__init__()
         # 超参
         # for optimizer(SGD)
         self.lr = lr
         self.weight_decay = weight_decay
         self.momentum = momentum
-        # for lr scheduler(ReduceLROnPlateau)
+        # for lr scheduler(StepLR)
         self.gamma = gamma
-        self.patience = patience
-        self.cooldown = cooldown
-
-        self.step_size = step_size # (for StepLR)
+        self.step_size = step_size
         # 其他
         self.save_hyperparameters()
-        self.accuracy = pl.metrics.Accuracy()
+        self.accuracy = Accuracy()
 
         # 组网
         self.hpf = HPF()

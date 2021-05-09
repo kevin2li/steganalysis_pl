@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torchmetrics import Accuracy
 
 __all__ = ['YeNet']
 
@@ -31,7 +32,7 @@ class YeNet(pl.LightningModule):
         self.step_size = step_size
         # 其他
         self.save_hyperparameters()
-        self.accuracy = pl.metrics.Accuracy()
+        self.accuracy = Accuracy()
 
         # 组网
         self.tlu = nn.Hardtanh(min_val=-3.0, max_val=3.0)

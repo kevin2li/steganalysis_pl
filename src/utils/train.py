@@ -6,22 +6,39 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-__all__ = ['initialization', 'partition_parameters', 'transfer_parameters', 'AverageMeter', 'EarlyStopping']
+__all__ = ['init_weights', 'partition_parameters', 'transfer_parameters', 'AverageMeter', 'EarlyStopping']
 
-def initialization(model: nn.Module):
-    # Common practise for initialization.
-    for layer in model.modules():
-        if isinstance(layer, torch.nn.Conv2d):
-            torch.nn.init.kaiming_normal_(layer.weight, mode='fan_out', nonlinearity='relu')
-            if layer.bias is not None:
-                torch.nn.init.constant_(layer.bias, val=0.0)
-        elif isinstance(layer, torch.nn.BatchNorm2d):
-            torch.nn.init.constant_(layer.weight, val=1.0)
-            torch.nn.init.constant_(layer.bias, val=0.0)
-        elif isinstance(layer, torch.nn.Linear):
-            torch.nn.init.xavier_normal_(layer.weight)
-            if layer.bias is not None:
-                torch.nn.init.constant_(layer.bias, val=0.0)
+@torch.no_grad()
+def init_weights(m: nn.Module):
+    if isinstance(m, nn.Linear):
+        torch.nn.init.xavier_normal_(m.weight)
+        if m.bias is not None:
+                torch.nn.init.constant_(m.bias, val=0.0)
+
+    elif isinstance(m, nn.Conv2d):
+        torch.nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+        if m.bias is not None:
+            torch.nn.init.constant_(m.bias, val=0.0)
+
+    elif isinstance(m, nn.BatchNorm2d):
+        torch.nn.init.constant_(m.weight, val=1.0)
+        torch.nn.init.constant_(m.bias, val=0.0)
+
+
+# def initialization(model: nn.Module):
+#     # Common practise for initialization.
+#     for layer in model.modules():
+#         if isinstance(layer, torch.nn.Conv2d):
+#             torch.nn.init.kaiming_normal_(layer.weight, mode='fan_out', nonlinearity='relu')
+#             if layer.bias is not None:
+#                 torch.nn.init.constant_(layer.bias, val=0.0)
+#         elif isinstance(layer, torch.nn.BatchNorm2d):
+#             torch.nn.init.constant_(layer.weight, val=1.0)
+#             torch.nn.init.constant_(layer.bias, val=0.0)
+#         elif isinstance(layer, torch.nn.Linear):
+#             torch.nn.init.xavier_normal_(layer.weight)
+#             if layer.bias is not None:
+#                 torch.nn.init.constant_(layer.bias, val=0.0)
 
 def partition_parameters(model: nn.Module, weight_decay):
     params_wd, params_rest = [], []
@@ -60,6 +77,7 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+        
 
 # modified from paddle.callbacks.EarlyStopping
 class EarlyStopping():

@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import pytorch_lightning as pl
+from torchmetrics import Accuracy
 
 __all__ = ['SRNet']
 
@@ -23,7 +24,7 @@ class SRNet(pl.LightningModule):
 
         # 其他
         self.save_hyperparameters()
-        self.accuracy = pl.metrics.Accuracy()
+        self.accuracy = Accuracy()
 
         # 组网
         # Layer 1

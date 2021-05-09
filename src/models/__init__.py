@@ -3,7 +3,6 @@ import torch
 import torch.optim as optim
 import torchmetrics
 from icecream import ic
-from src.utils import initialization, partition_parameters
 
 from . import srnet, xunet, yednet, yenet, zhunet
 from .srnet import *

@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from src.utils import ABS, HPF, TLU, SPPLayer
+from torchmetrics import Accuracy
 
 __all__ = ['XuNet']
 
@@ -19,69 +21,83 @@ KV = KV.view(1, 1, 5, 5).to(device=device, dtype=torch.float)
 KV = torch.autograd.Variable(KV, requires_grad=False)
 
 class XuNet(pl.LightningModule):
-    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
+    def __init__(self, lr: float=0.001, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, step_size: int = 200, **kwargs):
         super(XuNet, self).__init__()
         # 超参
         # for optimizer(SGD)
         self.lr = lr
         self.weight_decay = weight_decay
         self.momentum = momentum
-        # for lr scheduler(ReduceLROnPlateau)
+        # for lr scheduler(StepLR)
         self.gamma = gamma
-        self.patience = patience
-        self.cooldown = cooldown
+        self.step_size = step_size
 
         # 其他
         self.save_hyperparameters()
-        self.accuracy = pl.metrics.Accuracy()
+        self.accuracy = Accuracy()
 
         # 组网
-        self.conv1 = nn.Conv2d(1, 8, kernel_size=5, stride=1, padding=2, bias=False)
-        self.bn1 = nn.BatchNorm2d(8)
+        self.KV = nn.Conv2d(1, 1, 5, padding=2)
+        KV = torch.tensor([[-1, 2, -2, 2, -1],
+                   [2, -6, 8, -6, 2],
+                   [-2, 8, -12, 8, -2],
+                   [2, -6, 8, -6, 2],
+                   [-1, 2, -2, 2, -1]]) / 12.
+        self.KV.weight = nn.Parameter(KV, requires_grad=False)
 
-        self.conv2 = nn.Conv2d(8, 16, kernel_size=5, stride=1, padding=2, bias=False)
-        self.bn2 = nn.BatchNorm2d(16)
+        self.group1 = nn.Sequential(
+            nn.Conv2d(1, 8, 5, stride=1, padding=2, bias=False),
+            ABS(),
+            nn.BatchNorm2d(8),
+            nn.Tanh(),
+            nn.AvgPool2d(5, 2)
+        )
+        self.group2 = nn.Sequential(
+            nn.Conv2d(8, 16, 5, stride=1, padding=2, bias=False),
+            nn.BatchNorm2d(16),
+            nn.Tanh(),
+            nn.AvgPool2d(5, 2)
+        )
+        self.group3 = nn.Sequential(
+            nn.Conv2d(16, 32, 1, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.AvgPool2d(5, 2)
+        )
+        self.group4 = nn.Sequential(
+            nn.Conv2d(32, 64, 1, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.AvgPool2d(5, 2)
+        )
+        self.group5 = nn.Sequential(
+            nn.Conv2d(54, 128, 1, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(128),
+            nn.Tanh(),
+            nn.AvgPool2d(5, 2)
+        )
 
-        self.conv3 = nn.Conv2d(16, 32, kernel_size=1, stride=1, padding=0, bias=False)
-        self.bn3 = nn.BatchNorm2d(32)
-
-        self.conv4 = nn.Conv2d(32, 64, kernel_size=1, stride=1, padding=0, bias=False)
-        self.bn4 = nn.BatchNorm2d(64)
-
-        self.conv5 = nn.Conv2d(64, 128, kernel_size=1, stride=1, padding=0, bias=False)
-        self.bn5 = nn.BatchNorm2d(128)
-
-        self.fc = nn.Linear(128 * 1 * 1, 2)
+        self.fc = nn.Sequential(
+            nn.Linear(128, 2),
+        )
 
     def forward(self, x):
-        # print(x.shape)
-        prep = F.conv2d(x, KV, padding=2)
-        # print(prep.shape)
-        out = F.tanh(self.bn1(torch.abs(self.conv1(prep))))
-        out = F.avg_pool2d(out, kernel_size=5, stride=2, padding=2)
-
-        out = F.tanh(self.bn2(self.conv2(out)))
-        out = F.avg_pool2d(out, kernel_size=5, stride=2, padding=2)
-
-        out = F.relu(self.bn3(self.conv3(out)))
-        out = F.avg_pool2d(out, kernel_size=5, stride=2, padding=2)
-
-        out = F.relu(self.bn4(self.conv4(out)))
-        out = F.avg_pool2d(out, kernel_size=5, stride=2, padding=2)
-
-        out = F.relu(self.bn5(self.conv5(out)))
-        out = F.adaptive_avg_pool2d(out, (1, 1))
-
-        out = out.view(out.size(0), -1)
-        out = self.fc(out)
-        # out = F.softmax(out, dim=1)
-        return out
+        out = self.KV(x)
+        out1 = self.group1(out)
+        out2 = self.group2(out1)
+        out3 = self.group3(out2)
+        out4 = self.group4(out3)
+        out5 = self.group5(out4)
+        out6 = self.fc(out5)
+        return out6
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
         # lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.milestones, gamma=self.gamma)
-        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=self.gamma, patience=self.patience, cooldown=self.cooldown)
-        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler, 'monitor': 'val_loss'}
+        # lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=self.gamma, patience=self.patience, cooldown=self.cooldown)
+        lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=self.step_size, gamma=self.gamma)
+
+        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
 
     def training_step(self, batch, batch_idx):
         # preprocess

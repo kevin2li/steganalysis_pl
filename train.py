@@ -21,7 +21,7 @@ from pytorch_lightning.loggers import CometLogger
 
 from src.datasetmgr import ImageDataModule
 from src.models import SRNet, XuNet, YedNet, YeNet, ZhuNet
-from src.utils import initialization
+from src.utils import init_weights
 
 all_stego_dirs = [
     '/home/likai/DataSets/WOWstego(0.4)',
@@ -91,14 +91,14 @@ for dir in all_stego_dirs:
     datamodule = ImageDataModule(**hparams)
     datamodule.setup()
 
-    model = ZhuNet(**hparams)
+    # model = ZhuNet(**hparams)
     # model = YedNet(**hparams)
-    # model = XuNet(**hparams)
+    model = XuNet(**hparams)
     # model = YeNet(**hparams)
     # model = SRNet(**hparams)
 
-    initialization(model)
-    trainer = pl.Trainer(gpus=hparams['gpus'], max_epochs=hparams['max_epochs'], gradient_clip_val=hparams['gradient_clip_val'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
+    # model = model.apply(init_weights)
+    trainer = pl.Trainer(gpus=hparams['gpus'], max_epochs=hparams['max_epochs'], terminate_on_nan=True, gradient_clip_val=hparams['gradient_clip_val'], progress_bar_refresh_rate=1, logger=comet_logger,  callbacks=[checkpoint_callback], auto_lr_find=True)
 
     # %%
     # trainer.tune(model, datamodule=datamodule)

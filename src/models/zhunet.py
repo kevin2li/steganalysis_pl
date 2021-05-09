@@ -7,27 +7,26 @@ import torch.optim as optim
 from icecream import ic
 from src.utils import ABS, HPF, TLU, SPPLayer
 
+from torchmetrics import Accuracy
+
 __all__ = ['ZhuNet']
 
 
 class ZhuNet(pl.LightningModule):
-    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, step_size: int = 40, momentum: float = 0.9, patience: int = 20, cooldown: int = 5, **kwargs):
+    def __init__(self, lr: float=0.005, weight_decay: float= 5e-4, gamma: float = 0.2, step_size: int = 40, momentum: float = 0.9, **kwargs):
         super(ZhuNet, self).__init__()
         # 超参
         # for optimizer(SGD)
         self.lr = lr
         self.weight_decay = weight_decay
         self.momentum = momentum
-        # for lr scheduler(ReduceLROnPlateau)
+        # for lr scheduler(StepLR)
         self.gamma = gamma
-        self.patience = patience
-        self.cooldown = cooldown
-        
-        self.step_size = step_size # (for StepLR)
+        self.step_size = step_size
 
         # 其他
         self.save_hyperparameters()
-        self.accuracy = pl.metrics.Accuracy()
+        self.accuracy = Accuracy()
 
         # 组网
         self.layer1 = HPF()
