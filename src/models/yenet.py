@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# %%
 import numpy as np
 import pytorch_lightning as pl
 import torch
@@ -7,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchmetrics import Accuracy
+from src.utils import ABS, HPF, TLU, SPPLayer
 
 __all__ = ['YeNet']
 
@@ -15,9 +17,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 srm_16filters = np.load('src/utils/srm_16_filters.npy')
 srm_minmax = np.load('src/utils/minmax_filters.npy')
 srm_filters = np.concatenate((srm_16filters, srm_minmax),axis=0)
-
-srm_filters = torch.from_numpy(srm_filters).to(device=device, dtype=torch.float)
-srm_filters = torch.autograd.Variable(srm_filters, requires_grad=False)
+srm_filters = torch.from_numpy(srm_filters).to(device=device, dtype=torch.float32)
 
 class YeNet(pl.LightningModule):
     def __init__(self, lr: float=0.001, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, step_size: int = 50, **kwargs):
@@ -35,35 +35,65 @@ class YeNet(pl.LightningModule):
         self.accuracy = Accuracy()
 
         # 组网
-        self.tlu = nn.Hardtanh(min_val=-3.0, max_val=3.0)
-        self.conv2 = nn.Conv2d(30, 30, kernel_size=3, stride=1, padding=0)
-        self.conv3 = nn.Conv2d(30, 30, kernel_size=3, stride=1, padding=0)
-        self.conv4 = nn.Conv2d(30, 30, kernel_size=3, stride=1, padding=0)
-        self.conv5 = nn.Conv2d(30, 32, kernel_size=5, stride=1, padding=0)
-        self.conv6 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=0)
-        self.conv7 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=0)
-        self.conv8 = nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=0)
-        self.conv9 = nn.Conv2d(16, 16, kernel_size=3, stride=3, padding=0)
-        self.fc = nn.Linear(16 * 3 * 3, 2)
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(1, 30, 5, 1),
+            TLU(3.0),
+        )
+        self.layer1[0].weight = nn.Parameter(srm_filters, requires_grad=False)
+
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(30, 30, 3, 1),
+            nn.ReLU()
+        )
+        self.layer3 = nn.Sequential(
+            nn.Conv2d(30, 30, 3, 1),
+            nn.ReLU()
+        )
+        self.layer4 = nn.Sequential(
+            nn.Conv2d(30, 30, 3, 1),
+            nn.ReLU(),
+            nn.AvgPool2d(2, 2)
+        )
+        self.layer5 = nn.Sequential(
+            nn.Conv2d(30, 32, 5, 1),
+            nn.ReLU(),
+            nn.AvgPool2d(3, 2)
+        )
+        self.layer6 = nn.Sequential(
+            nn.Conv2d(32, 32, 5, 1),
+            nn.ReLU(),
+            nn.AvgPool2d(3, 2)
+        )
+        self.layer7 = nn.Sequential(
+            nn.Conv2d(32, 32, 5, 1),
+            nn.ReLU(),
+            nn.AvgPool2d(3, 2)
+        )
+        self.layer8 = nn.Sequential(
+            nn.Conv2d(32, 16, 3, 1),
+            nn.ReLU(),
+        )
+        self.layer9 = nn.Sequential(
+            nn.Conv2d(16, 16, 3, 3),
+            nn.ReLU(),
+        )
+        self.layer10 = nn.Sequential(
+            nn.Linear(3*3*16, 2)
+        )
 
     def forward(self, x):
-        out = self.tlu(F.conv2d(x, srm_filters))
-        out = F.relu(self.conv2(out))
-        out = F.relu(self.conv3(out))
-        out = F.relu(self.conv4(out))
-        out = F.avg_pool2d(out, kernel_size=3, stride=2, padding=1)
-        out = F.relu(self.conv5(out))
-        out = F.avg_pool2d(out, kernel_size=3, stride=2, padding=0)
-        out = F.relu(self.conv6(out))
-        out = F.avg_pool2d(out, kernel_size=3, stride=2, padding=0)
-        out = F.relu(self.conv7(out))
-        out = F.avg_pool2d(out, kernel_size=3, stride=2, padding=0)
-        out = F.relu(self.conv8(out))
-        out = F.relu(self.conv9(out))
-        out = out.view(out.size(0), -1)
-        out = self.fc(out)
-        # out = F.softmax(out, dim=1)
-        return out
+        out = self.layer1(x)
+        out1 = self.layer2(out)
+        out2 = self.layer3(out1)
+        out3 = self.layer4(out2)
+        out4 = self.layer5(out3)
+        out5 = self.layer6(out4)
+        out6 = self.layer7(out5)
+        out7 = self.layer8(out6)
+        out8 = self.layer9(out7)
+        out8 = out8.reshape(out8.shape[0], -1)
+        out9 = self.layer10(out8)
+        return out9
 
     def configure_optimizers(self):
         params_wd, params_rest = [], []

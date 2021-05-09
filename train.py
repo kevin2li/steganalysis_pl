@@ -43,26 +43,26 @@ for dir in all_stego_dirs:
         # path
         'data_dirs': data_dirs,
         # optimizer(SGD)
-        'lr': 0.005,    # yenet:0.001 others:0.005
+        'lr': 0.001,    # yenet:0.001 others:0.005
         'weight_decay': 5e-4,
         'momentum': 0.9,
         # lr scheduler(ReduceLROnPlateau)
         'gamma': 0.2,
         'patience': 25,
         'cooldown': 5,
-        'step_size': 50,
+        'step_size': 200,
         # other
         'gpus': '0',
         'seed': 2021,
         'batch_size': 32,
-        'max_epochs': 280,
+        'max_epochs': 420,
         'gradient_clip_val': 1.0,
         # comet.ml experiment description
         'api_key': '6vfLO89GXYkYrGcritIRFfqmj',
         'save_dir': 'comet_log',
         'workspace': 'kevin2li',
-        'project_name': 'zhunet_project',
-        'experiment_name': f'zhunet_{dir[21:]}',
+        'project_name': 'xunet_project',
+        'experiment_name': f'xunet_{dir[21:]}',
         'experiment_key': None
     }
     pl.seed_everything(hparams['seed'])
