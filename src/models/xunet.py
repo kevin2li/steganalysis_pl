@@ -10,16 +10,6 @@ from torchmetrics import Accuracy
 
 __all__ = ['XuNet']
 
-device = torch.device('cuda:0' if torch.cuda.is_available else 'cpu')
-
-KV = torch.tensor([[-1, 2, -2, 2, -1],
-                   [2, -6, 8, -6, 2],
-                   [-2, 8, -12, 8, -2],
-                   [2, -6, 8, -6, 2],
-                   [-1, 2, -2, 2, -1]]) / 12.
-KV = KV.view(1, 1, 5, 5).to(device=device, dtype=torch.float)
-KV = torch.autograd.Variable(KV, requires_grad=False)
-
 class XuNet(pl.LightningModule):
     def __init__(self, lr: float=0.001, weight_decay: float= 5e-4, gamma: float = 0.2, momentum: float = 0.9, step_size: int = 200, **kwargs):
         super(XuNet, self).__init__()
@@ -42,7 +32,8 @@ class XuNet(pl.LightningModule):
                    [2, -6, 8, -6, 2],
                    [-2, 8, -12, 8, -2],
                    [2, -6, 8, -6, 2],
-                   [-1, 2, -2, 2, -1]]) / 12.
+                   [-1, 2, -2, 2, -1]], dtype=torch.float32) / 12.
+        KV = KV.reshape(1, 1, 5, 5)
         self.KV.weight = nn.Parameter(KV, requires_grad=False)
 
         self.group1 = nn.Sequential(
@@ -71,10 +62,10 @@ class XuNet(pl.LightningModule):
             nn.AvgPool2d(5, 2)
         )
         self.group5 = nn.Sequential(
-            nn.Conv2d(54, 128, 1, stride=1, padding=0, bias=False),
+            nn.Conv2d(64, 128, 1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(128),
             nn.Tanh(),
-            nn.AvgPool2d(5, 2)
+            nn.AdaptiveAvgPool2d((1, 1))
         )
 
         self.fc = nn.Sequential(
@@ -88,6 +79,7 @@ class XuNet(pl.LightningModule):
         out3 = self.group3(out2)
         out4 = self.group4(out3)
         out5 = self.group5(out4)
+        out5 = out5.reshape(out5.shape[0], -1)
         out6 = self.fc(out5)
         return out6
 
